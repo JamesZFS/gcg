@@ -13,10 +13,10 @@ class MatrixA(object):
 		:param variance: V/n (m,)
 		:param penalty: float
 		'''
-		assert bias[0] == 0  # todo uncheck this
-		assert len(bias) == len(variance)
-		for vi in variance:
-			assert vi > 0  # vi == 0 makes the problem degenerate
+		# assert bias[0] == 0
+		# assert len(bias) == len(variance)
+		# for vi in variance:
+		# 	assert vi > 0  # vi == 0 makes the problem degenerate
 		self.m = len(bias)  # number of strategies
 		self.b = np.array(bias, dtype=np.float)  # row vec
 		self.v = np.array(variance, dtype=np.float)  # row vec
@@ -38,10 +38,10 @@ class MatrixA(object):
 		'''
 		return self.b.dot(x) ** 2 + self.p * x.sum() ** 2 + (self.v * x ** 2).sum()
 
-	def split(self, J: np.ndarray):
+	def split(self, J):
 		'''split the matrix into [[A_II, A_JI^T], [A_JI, A_JJ]]
 
-		:param J: index list
+		:param J: index map
 		:return: MatrixA, A_JJ
 		'''
 		return MatrixA(self.b[J], self.v[J], self.p)

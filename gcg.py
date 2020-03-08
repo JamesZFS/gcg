@@ -4,9 +4,10 @@
 from special_mat import *
 
 DEFAULT_EPS = 1e-5
+DEFAULT_EPS_ZERO = 1e-5
 
 
-def generalized_conjugate_gradient(A: MatrixA, b: float, x0: np.ndarray, eps=DEFAULT_EPS):
+def generalized_conjugate_gradient(A: MatrixA, b: float, x0: np.ndarray, eps=DEFAULT_EPS, eps_zero=DEFAULT_EPS_ZERO):
 	'''The generalized conjugate gradient algorithm for solving quadratic programming:
 	min 1/2 x^T A x - b x  s.t. x_i >= 0
 
@@ -20,28 +21,27 @@ def generalized_conjugate_gradient(A: MatrixA, b: float, x0: np.ndarray, eps=DEF
 	# Initialization:
 	m = A.m
 	k = 0  # n_iter_outer
-	I = np.arange(0, m)  # I = {i: xi = 0 and yi > 0}
+	n_step = 0
+	# I = np.arange(0, m)
+	I = np.ones(m, dtype=bool)  # I = {i: xi = 0 and yi > 0} boundary set
 	x = x0  # x_k
 
 	# Outer Iteration:
 	while True:
-		print('\033[32mnew outer iter k = %d\033[0m' % k)
+		# print('\033[32mnew outer iter k = %d\033[0m' % k)
 		k += 1
 		y = A.mul(x) - b  # y_k
 		I_ = I  # I_(k-1)
-		boundary = (x < eps) & (y > 0)  # xi==0 and yi>0
-		interior = ~boundary
-		I = np.where(boundary)[0]  # I_k todo
-		print('I_=', I_, 'I=', I)
-		if I.shape == I_.shape and (I == I_).all(): break  # return x
-		J = np.where(interior)[0]  # todo
+		I = (x < eps_zero) & (y > 0)  # xi==0 and yi>0
+		J = ~I  # interior set
+		# print('I_=', I_, 'I=', I)
+		if (I == I_).all(): break  # return x
 
 		# Inner Iteration:
 		while True:
-			print('\033[34m  restart inner iter\033[0m')
+			# print('\033[34m  restart inner iter\033[0m')
 			# (a) Partition and rearrange A, b:
-			# x_I, x_J = x[I], x[J]
-			x_I, x_J = x[boundary], x[interior]
+			x_J = x[J]
 			A_JJ = A.split(J)
 			# b_J = b
 
@@ -52,7 +52,7 @@ def generalized_conjugate_gradient(A: MatrixA, b: float, x0: np.ndarray, eps=DEF
 			restart_outer: bool
 			q = 0  # n_iter_inner
 			while True:
-				print('    inner iter q = %d' % q)
+				# print('    inner iter q = %d' % q)
 				# (b) Calc new iterate and residue:
 				A_JJ_p = A_JJ.mul(p)  # A_JJ @ p(q)
 				rdr = r.dot(r)  # r(q) dot r(q)
@@ -62,44 +62,35 @@ def generalized_conjugate_gradient(A: MatrixA, b: float, x0: np.ndarray, eps=DEF
 				# max step that doesn't violate x >= 0:
 				a_max = np.min(-z[p_neg_pos] / p_neg) if len(p_neg) > 0 else np.inf
 				alpha = min(a_cg, a_max)  # step size a(q)
-
-				# step z
+				# step z:
 				z = z + alpha * p  # z(q+1)
-				r_ = r
+				n_step += 1
 				r = r - alpha * A_JJ_p  # r(q+1)
-				print('   ',r_.dot(r))
-				# assert r_.dot(r) < eps  # todo
 				rdr_ = rdr  # r(q) dot r(q)
 				rdr = r.dot(r)  # r(q+1) dot r(q+1)
 
 				# (c) Test for termination of inner iteration:
-				print('    rdr = %f' % rdr)
+				# print('    rdr = %f' % rdr)
 				if rdr < eps:
 					x_J = z
-					x[boundary], x[interior] = x_I, x_J  # reconstruct x_k
+					x[J] = x_J  # reconstruct x_k
 					restart_outer = True
 					break  # goto (e)
-				elif (z > eps).all():  # {i: z(q+1)_i == 0} is empty, I doesn't change
-					pass  # goto (d)
-				else:
-					x_J = z
-					x[boundary], x[interior] = x_I, x_J  # reconstruct x_k
-					boundary = (x < eps)  # & (y > 0)  # xi==0 and yi>0
-					interior = ~boundary  # todo, calc I incrementally
-					I = np.where(boundary)[0]
-					J = np.where(interior)[0]
-					if len(I) == m:  # I == {0,1,..,m-1}
-						print('\033[31mwarning: all x == 0!\033[0m')
-						restart_outer = True
-					else:
-						restart_outer = False  # restart inner
+				if (z < eps_zero).any():  # {i: z(q+1)_i == 0} is empty, I doesn't change
+					# some x_J should be added to boundary set I
+					x[J] = z  # reconstruct x_k
+					I = x < eps_zero  # we always have I_k > I_(k-1)
+					J = ~I
+					# if I.all():  # I == {0,1,..,m-1}
+					# 	print('\033[31mwarning: all x == 0!\033[0m')
+					# 	restart_outer = True
+					# else:
+					restart_outer = False  # restart inner
 					break  # goto (e)
-
+				# else: boundary set does not expand
 				# (d) Calc new search direction
-				# todo
 				beta = rdr / rdr_
 				p = r + beta * p  # p(q+1)
-				assert p.dot(A_JJ_p) < eps  # todo
 				q += 1  # goto (b)
 
 			# Loop (b)
@@ -107,4 +98,5 @@ def generalized_conjugate_gradient(A: MatrixA, b: float, x0: np.ndarray, eps=DEF
 		# Inner Loop
 		pass
 	# Outer Loop
+	print('k =', k, 'n_step =', n_step)
 	return x
