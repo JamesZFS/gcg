@@ -7,7 +7,7 @@ DEFAULT_EPS = 1e-5
 DEFAULT_EPS_ZERO = 1e-5
 
 
-def generalized_conjugate_gradient(A: MatrixA, b: float, x0: np.ndarray, eps=DEFAULT_EPS, eps_zero=DEFAULT_EPS_ZERO):
+def generalized_conjugate_gradient(A: MatrixA, b: float, x0: np.ndarray, ret_steps=False, eps=DEFAULT_EPS, eps_zero=DEFAULT_EPS_ZERO):
 	'''The generalized conjugate gradient algorithm for solving quadratic programming:
 	min 1/2 x^T A x - b x  s.t. x_i >= 0
 
@@ -20,7 +20,7 @@ def generalized_conjugate_gradient(A: MatrixA, b: float, x0: np.ndarray, eps=DEF
 	assert (x0 >= 0).all()
 	# Initialization:
 	m = A.m
-	k = 0  # n_iter_outer
+	n_outer = 0  # n_iter_outer
 	n_step = 0
 	# I = np.arange(0, m)
 	I = np.ones(m, dtype=bool)  # I = {i: xi = 0 and yi > 0} boundary set
@@ -29,7 +29,7 @@ def generalized_conjugate_gradient(A: MatrixA, b: float, x0: np.ndarray, eps=DEF
 	# Outer Iteration:
 	while True:
 		# print('\033[32mnew outer iter k = %d\033[0m' % k)
-		k += 1
+		n_outer += 1
 		y = A.mul(x) - b  # y_k
 		I_ = I  # I_(k-1)
 		I = (x < eps_zero) & (y > 0)  # xi==0 and yi>0
@@ -98,5 +98,7 @@ def generalized_conjugate_gradient(A: MatrixA, b: float, x0: np.ndarray, eps=DEF
 		# Inner Loop
 		pass
 	# Outer Loop
-	print('k =', k, 'n_step =', n_step)
-	return x
+	if ret_steps == True:
+		return x, n_outer, n_step
+	else:
+		return x

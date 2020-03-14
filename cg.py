@@ -2,14 +2,14 @@ import time
 
 from special_mat import *
 
-DEFAULT_EPS = 1e-5
+DEFAULT_EPS_ZERO = 1e-5
 
 
-def conjugate_gradient(A: MatrixA, b: np.ndarray, x0: np.ndarray, eps=DEFAULT_EPS):
+def conjugate_gradient(A: MatrixA, b, x0: np.ndarray, eps_zero=DEFAULT_EPS_ZERO):
 	'''solve A x = b using conjugate gradient
 
 	:param A: MatrixA
-	:param b: row vec
+	:param b: row vec or float
 	:param x0: initial x, row vec
 	:return: solution(row vec) and n_iteration
 	'''
@@ -17,7 +17,7 @@ def conjugate_gradient(A: MatrixA, b: np.ndarray, x0: np.ndarray, eps=DEFAULT_EP
 	rdr = r.dot(r)
 	p = r  # explore direction
 	k = 0  # n_iter
-	max_iter = len(b)
+	max_iter = A.m
 	x = x0
 	while k < max_iter:
 		Ap = A.mul(p)
@@ -27,13 +27,13 @@ def conjugate_gradient(A: MatrixA, b: np.ndarray, x0: np.ndarray, eps=DEFAULT_EP
 		r = r - alpha * Ap  # rk+1
 		rdr_ = rdr  # rk dot rk
 		rdr = r.dot(r)  # rk+1 dot rk+1
-		if rdr < eps: break  # if r is sufficiently small
+		if rdr < eps_zero: break  # if r is sufficiently small
 		beta = rdr / rdr_
 		p = r + beta * p  # pk+1
 	return x, k
 
 
-def conjgrad_ref(A, b, x, eps=DEFAULT_EPS):
+def conjgrad_ref(A, b, x, eps=DEFAULT_EPS_ZERO):
 	r = b - A @ x
 	p = r
 	rsold = r.dot(r)
