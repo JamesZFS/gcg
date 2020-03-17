@@ -1,63 +1,8 @@
 import time
 
-import cvxpy as cp
-import numpy as np
-
-from special_mat import MatrixA
-from cg import conjugate_gradient
-from gcg import generalized_conjugate_gradient
 from matplotlib import pyplot as plt
 
-
-def init_trivial(b, V, penalty, A=None) -> np.ndarray:
-	m = len(b)
-	return np.ones(m) / m
-
-
-def init_var(b, V, penalty, A=None) -> np.ndarray:
-	x0 = 1 / np.array(V)
-	return x0 / x0.sum()
-
-
-def init_no_constr(b, V, penalty, A) -> np.ndarray:
-	x0, n_iter = conjugate_gradient(A, penalty, init_var(b, V, penalty), eps_zero=1e-5)
-	print('init with cg, iters=', n_iter)
-	x0[x0 < 0] = 0
-	return x0 / x0.sum()
-
-
-def opt_OSQP(b: list, V: list, **kwargs):
-	assert b[0] == 0
-	m = len(V)
-	b = np.array(b)
-	Q = np.diag(V) + np.outer(b, b)
-	W = cp.Variable((m, 1), "optimal weights")
-	objective = cp.quad_form(W, Q)  # W^T Q W
-	constraints = [
-		W >= 0,
-		cp.sum(W) == 1
-	]
-	prob = cp.Problem(cp.Minimize(objective), constraints)
-	print('solving...')
-	prob.solve(solver=cp.OSQP, **kwargs)
-	W = (W.value.T)[0]
-	# kick out negative values and re-normalize
-	W[W < 0] = 0
-	W = W / np.sum(W)
-	return W
-
-
-def opt_GCG(b: list, V: list, penalty=1e3, init_method=init_trivial, ret_steps=False, **kwargs):
-	A = MatrixA(b, V, penalty)
-	x0 = init_method(b, V, penalty, A)  # todo need better initial x
-	result = generalized_conjugate_gradient(A, penalty, x0, ret_steps, **kwargs)
-	n_outer = n_step = 0
-	if ret_steps == True:
-		W, n_outer, n_step = result
-	else:
-		W = result
-	W = W / np.sum(W)
-	return W, n_outer, n_step if ret_steps == True else W
+from optimizer import *
 
 
 def simple_test(method, **kwargs):
@@ -150,11 +95,12 @@ def show_form_benefit(seed=time.time_ns() % 1000, iter=200):
 
 
 def compare_two(m=128):
+	print(f'm = {m}')
 	n = 32
-	# np.random.seed(10)
-	V = np.abs(np.random.normal(0, 10, m)) / n
+	np.random.seed(10)
+	V = np.abs(np.random.normal(0, 1, m)) / n
 	b = np.random.random(m)
-	b[0] = 0
+	# b[m / 2] = 0
 	penalty = 1
 	eps = 1e-10
 
@@ -167,7 +113,7 @@ def compare_two(m=128):
 	t2 = time.time() - tic
 
 	tic = time.time()
-	W3, n_outer_va, n_step_va = opt_GCG(b, V, penalty, init_method=init_var, ret_steps=True, eps=eps)  # ours
+	W3, n_outer_bv, n_step_bv = opt_GCG(b, V, penalty, init_method=init_bias_var, ret_steps=True, eps=eps)  # ours
 	t3 = time.time() - tic
 
 	tic = time.time()
@@ -175,21 +121,21 @@ def compare_two(m=128):
 	t4 = time.time() - tic
 
 	print('std: ', t1, 'sec')
-	print('ours:', t2, 'sec', '  outers=', n_outer_tv, '  steps=', n_step_tv, '  \tdiff=', np.linalg.norm(W1 - W2, ord=1),
-		  '  accl=', t1 / t2, '  trivial init')
-	print('ours:', t3, 'sec', '  outers=', n_outer_va, '  steps=', n_step_va, '  \tdiff=', np.linalg.norm(W1 - W3, ord=1),
-		  '  accl=', t1 / t3, '  variance init')
-	print('\033[32mours:', t4, 'sec', '  outers=', n_outer_cg, '  steps=', n_step_cg, '  \tdiff=', np.linalg.norm(W1 - W4, ord=1),
-		  '  accl=', t1 / t4, '  no_constr+cg init\033[0m')
+	print('ours:', t2, 'sec', '  outers=', n_outer_tv, '  steps=', n_step_tv, '  \tdiff=',
+		  np.linalg.norm(W1 - W2, ord=1), '  accl=', t1 / t2, '  trivial init')
+	print('ours:', t3, 'sec', '  outers=', n_outer_bv, '  steps=', n_step_bv, '  \tdiff=',
+		  np.linalg.norm(W1 - W3, ord=1), '  accl=', t1 / t3, '  bias-variance init')
+	print('\033[32mours:', t4, 'sec', '  outers=', n_outer_cg, '  steps=', n_step_cg, '  \tdiff=',
+		  np.linalg.norm(W1 - W4, ord=1), '  accl=', t1 / t4, '  no_constr+cg init\033[0m')
 
-	# plt.plot(W1, color='red', alpha=0.3)
-	# plt.plot(W2, color='blue', alpha=0.3)
-	# plt.plot(W3, color='yellow', alpha=0.3)
-	# plt.xlabel('i')
-	# plt.ylabel('w[i]')
-	# plt.legend(['std', 'ours1, ours2'])
-	# plt.ylim((0, 0.2))
-	# plt.show()
+	plt.plot(W1, color='red', alpha=0.3)
+	plt.plot(W2, color='blue', alpha=0.3)
+	plt.plot(W3, color='yellow', alpha=0.3)
+	plt.xlabel('i')
+	plt.ylabel('w[i]')
+	plt.legend(['std', 'ours1, ours2'])
+	plt.ylim((0, 0.2))
+	plt.show()
 	pass
 
 

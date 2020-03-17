@@ -13,7 +13,6 @@ class MatrixA(object):
 		:param variance: V/n (m,)
 		:param penalty: float
 		'''
-		# assert bias[0] == 0
 		# assert len(bias) == len(variance)
 		# for vi in variance:
 		# 	assert vi > 0  # vi == 0 makes the problem degenerate

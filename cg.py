@@ -5,7 +5,7 @@ from special_mat import *
 DEFAULT_EPS_ZERO = 1e-5
 
 
-def conjugate_gradient(A: MatrixA, b, x0: np.ndarray, eps_zero=DEFAULT_EPS_ZERO):
+def conjugate_gradient(A: MatrixA, b, x0: np.ndarray, max_iter=None, eps_zero=DEFAULT_EPS_ZERO):
 	'''solve A x = b using conjugate gradient
 
 	:param A: MatrixA
@@ -17,7 +17,10 @@ def conjugate_gradient(A: MatrixA, b, x0: np.ndarray, eps_zero=DEFAULT_EPS_ZERO)
 	rdr = r.dot(r)
 	p = r  # explore direction
 	k = 0  # n_iter
-	max_iter = A.m
+	if not max_iter:
+		max_iter = A.m
+	else:
+		max_iter = min(max_iter, A.m)
 	x = x0
 	while k < max_iter:
 		Ap = A.mul(p)
