@@ -7,7 +7,8 @@ DEFAULT_EPS = 1e-5
 DEFAULT_EPS_ZERO = 1e-5
 
 
-def generalized_conjugate_gradient(A: MatrixA, b: float, x0: np.ndarray, ret_steps=False, eps=DEFAULT_EPS, eps_zero=DEFAULT_EPS_ZERO):
+def generalized_conjugate_gradient(A: MatrixA, b: float, x0: np.ndarray, ret_steps=False, eps=DEFAULT_EPS,
+								   eps_zero=DEFAULT_EPS_ZERO, max_iter=None):
 	'''The generalized conjugate gradient algorithm for solving quadratic programming:
 	min 1/2 x^T A x - b x  s.t. x_i >= 0
 
@@ -18,6 +19,7 @@ def generalized_conjugate_gradient(A: MatrixA, b: float, x0: np.ndarray, ret_ste
 	'''
 	assert x0.shape == A.b.shape
 	assert (x0 >= 0).all()
+	if max_iter == None: max_iter = x0.shape[0]
 	# Initialization:
 	m = A.m
 	n_outer = 0  # n_iter_outer
@@ -65,6 +67,11 @@ def generalized_conjugate_gradient(A: MatrixA, b: float, x0: np.ndarray, ret_ste
 				# step z:
 				z = z + alpha * p  # z(q+1)
 				n_step += 1
+				if n_step >= max_iter: # early stop
+					if ret_steps == True:
+						return x, n_outer, n_step
+					else:
+						return x
 				r = r - alpha * A_JJ_p  # r(q+1)
 				rdr_ = rdr  # r(q) dot r(q)
 				rdr = r.dot(r)  # r(q+1) dot r(q+1)

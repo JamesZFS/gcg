@@ -18,7 +18,7 @@ def init_bias_var(b, V, penalty, A=None) -> np.ndarray:
 
 def init_no_constr(b, V, penalty, A) -> np.ndarray:
 	x0, n_iter = conjugate_gradient(A, penalty, init_bias_var(b, V, penalty), eps_zero=1e-5)
-	print('init with cg, iters=', n_iter)
+	# print('init with cg, iters=', n_iter)
 	x0[x0 < 0] = 0
 	return x0 / x0.sum()
 
@@ -45,7 +45,7 @@ def opt_OSQP(b: list, V: list, **kwargs):
 	return W
 
 
-def opt_GCG(b: list, V: list, penalty=1, init_method=init_trivial, ret_steps=False, **kwargs):
+def opt_GCG(b: list, V: list, penalty=1, init_method=init_no_constr, ret_steps=False, **kwargs):
 	A = MatrixA(b, V, penalty)
 	x0 = init_method(b, V, penalty, A)  # todo need better initial x
 	result = generalized_conjugate_gradient(A, penalty, x0, ret_steps, **kwargs)
