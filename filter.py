@@ -1,6 +1,7 @@
 from optimizer import *
 from PIL import Image, ImageFilter
 from tqdm import tqdm
+import time
 
 EPSILON = 1e-5
 
@@ -49,10 +50,9 @@ def denoise(im_mean: np.ndarray, im_var: np.ndarray, im_original: np.ndarray, fi
 				b = b_multi[:, :, channel].flatten()
 				v = v_multi[:, :, channel].flatten() + EPSILON
 				o = o_multi[:, :, channel].flatten()
-				# print(b, v)
 				assert (v > 0).all()
 				w = opt_GCG(b, v, ret_steps=False, **kwargs)
-				im_result[i_r, i_c, channel] = o.dot(w)  # reconstruct
+				im_result[i_r, i_c, channel] = o.dot(w)  # apply filter on original image
 	return im_result
 
 
@@ -70,26 +70,38 @@ def imshow(img: np.ndarray):
 	Image.fromarray((255 * img).astype('uint8')).show()
 
 
-# small test:
-im_mean = imread('data/8196mean.png')[200:300, 300:450, :]
-im_var = imread('data/8196variance.png')[200:300, 300:450, :]
-im_original = imread('data/16mean.png')[200:300, 300:450, :]
-imwrite(im_original, 'out/small 63x63/16original.png')
-imwrite(im_mean, 'out/small 63x63/16reference.png')
-im_result = denoise(im_mean, im_var, im_original, (63, 63), max_iter=100)
-imwrite(im_result, 'out/small 63x63/16filtered.png')
+def show_diff(img1, img2):
+	imshow(img1 - img2)
 
-# im_mean = imread('data/8196mean.png')
-# im_var = imread('data/8196variance.png')
-# im_original = imread('data/16mean.png')
+
+# small test:
+# im_mean = imread('data/images-png-part1/16spp/mean_cross_filtered_iter2.png')[200:300, 300:450, :]
+# im_mean = imread('data/16mean.png')[200:300, 300:450, :]
+# im_var = imread('data/16variance.png')[200:300, 300:450, :] / (16 ** 2)
+# im_var = imread('data/images-png-part1/16spp/variance_cross_filtered_iter2.png')[200:300, 300:450, :] / (16 ** 2)
+# im_original = imread('data/16mean.png')[200:300, 300:450, :]
+# im_result = denoise(im_mean, im_var, im_original, (63, 63), max_iter=0)
+# imwrite(im_result, 'out/small 63x63/filtered_iter_0_bias_var_guided_by_self.png')
+
+# massive test
+im_mean = imread('out/full 63x63/mean_cross_filtered_iter2.png')
+im_var = imread('data/images-png-part1/16spp/variance_cross_filtered_iter2.png') / (16 ** 2)
+im_original = imread('data/16mean.png')
 # imwrite(im_original, 'out/full 63x63/16original.png')
-# imwrite(im_mean, 'out/full 63x63/16reference.png')
+# imwrite(im_mean, 'out/full 63x63/mean_cross_filtered_iter2.png')
+im_result = denoise(im_mean, im_var, im_original, (63, 63), max_iter=0)
+imwrite(im_result, 'out/full 63x63/iter_0_init_bias_var_guided_by_cross.png')
+
+# diff
+# imwrite(imread('out/full 63x63/16reference.png')[:,:,0:3] - imread('out/full 63x63/iter_0_init_bias_var.png'), 'out/full 63x63/diff.png')
 
 # im = Image.open('data/16mean.png')
-# im = im.filter(ImageFilter.BLUR)
+# since = time.time()
+# N = 100
+# for i in range(N):
+# 	im = im.filter(ImageFilter.BLUR)
+# print(f'{(time.time() - since) / N} sec')
 # im.save('out/blur_ref.png')
-# im_result = denoise(im_mean, im_var, im_original, (5, 5))
-# imwrite(im_result, 'out/blur.png')
 
 # im = imread('data/16mean.png')
 # imwrite(im, 'data/16mean2.png')
