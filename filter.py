@@ -19,7 +19,7 @@ def check_shape(img: np.ndarray) -> np.ndarray:
 
 def get_todo_list(amount: int, n_job: int) -> list:
 	piece = amount / n_job
-	return [range(int(piece * i), int((piece + 1) * i)) for i in range(n_job)]
+	return [range(int(piece * i), int(piece * (i + 1))) for i in range(n_job)]
 
 
 def denoise(im_mean: np.ndarray, im_var: np.ndarray, im_original: np.ndarray, filter_size: tuple,
@@ -105,7 +105,7 @@ def show_diff(img1, img2):
 # imwrite(im_result, 'out/small 63x63/filtered_iter_0_bias_var_guided_by_self.png')
 
 # massive test
-im_mean = imread('data/images-png-part1/16spp/mean_cross_filtered.png')
+im_mean = imread('data/images-png-part1/16spp/mean_cross_filtered_iter2.png')
 im_var = imread('data/images-png-part1/16spp/variance_cross_filtered_iter2.png') / (16 ** 2)
 im_original = imread('data/16mean.png')
 # imwrite(im_original, 'out/full 63x63/16original.png')
