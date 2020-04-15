@@ -1,4 +1,5 @@
 import time
+import sys
 
 from matplotlib import pyplot as plt
 
@@ -104,12 +105,14 @@ def compare_two(m=128, plot=False):
 	penalty = 1
 	eps = 1e-10
 
-	tic = time.time()
-	W1 = opt_OSQP(b, V, max_iter=100_000, verbose=False)
-	t1 = time.time() - tic
+	if plot:
+		tic = time.time()
+		W1 = opt_OSQP(b, V, max_iter=100_000, verbose=False)
+		t1 = time.time() - tic
 
 	tic = time.time()
-	W2, n_outer_tv, n_step_tv = opt_GCG(b, V, penalty, ret_steps=True, eps=eps)  # ours
+	# W2, n_outer_tv, n_step_tv = opt_GCG(b, V, penalty, init_method=init_bias_var, ret_steps=True, eps=eps, max_iter=0)  # ours
+	W2, n_outer_tv, n_step_tv = opt_GCG(b, V, penalty, init_method=init_bias_var, ret_steps=True, eps=eps, max_iter=0)  # ours
 	t2 = time.time() - tic
 
 	tic = time.time()
@@ -120,7 +123,12 @@ def compare_two(m=128, plot=False):
 	W4, n_outer_cg, n_step_cg = opt_GCG(b, V, penalty, init_method=init_no_constr, ret_steps=True, eps=eps)  # ours
 	t4 = time.time() - tic
 
-	print('std: ', t1, 'sec')
+	if plot:
+		print('std: ', t1, 'sec')
+	else:
+		t1 = np.nan
+		W1 = np.nan
+
 	print('ours:', t2, 'sec', '  outers=', n_outer_tv, '  steps=', n_step_tv, '  \tdiff=',
 		  np.linalg.norm(W1 - W2, ord=1), '  accl=', t1 / t2, '  trivial init')
 	print('ours:', t3, 'sec', '  outers=', n_outer_bv, '  steps=', n_step_bv, '  \tdiff=',
@@ -148,4 +156,4 @@ def compare_two(m=128, plot=False):
 # simple_test(opt_GCG, eps=1e-20)
 # massive_test(opt_GCG, penalty=1e2, eps=1e-10, eps_zero=1e-10)
 # show_form_benefit(iter=300)
-compare_two(m=128)
+compare_two(m=int(sys.argv[1] if len(sys.argv) >= 2 else 4096), plot=False)

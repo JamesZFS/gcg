@@ -48,7 +48,7 @@ def opt_OSQP(b: list, V: list, **kwargs):
 def opt_GCG(b: list, V: list, penalty=1, init_method=init_bias_var, ret_steps=False, **kwargs):
 	A = MatrixA(b, V, penalty)
 	x0 = init_method(b, V, penalty, A)
-	if kwargs.get('max_iter', np.inf) == 0: return x0
+	# if kwargs.get('max_iter', np.inf) == 0: return x0
 	result = generalized_conjugate_gradient(A, penalty, x0, ret_steps, **kwargs)
 	if ret_steps == True:
 		W, n_outer, n_step = result
