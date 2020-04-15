@@ -94,7 +94,7 @@ def show_form_benefit(seed=time.time_ns() % 1000, iter=200):
 	assert diff3 < 1e-3
 
 
-def compare_two(m=128):
+def compare_two(m=128, plot=False):
 	print(f'm = {m}')
 	n = 32
 	np.random.seed(10)
@@ -128,18 +128,24 @@ def compare_two(m=128):
 	print('\033[32mours:', t4, 'sec', '  outers=', n_outer_cg, '  steps=', n_step_cg, '  \tdiff=',
 		  np.linalg.norm(W1 - W4, ord=1), '  accl=', t1 / t4, '  no_constr+cg init\033[0m')
 
-	plt.plot(W1, color='red', alpha=0.3)
-	plt.plot(W2, color='blue', alpha=0.3)
-	plt.plot(W3, color='yellow', alpha=0.3)
-	plt.xlabel('i')
-	plt.ylabel('w[i]')
-	plt.legend(['std', 'ours1, ours2'])
-	plt.ylim((0, 0.2))
-	plt.show()
+	if plot:
+		plt.plot(W1, color='red', alpha=0.3)
+		plt.plot(W2, color='blue', alpha=0.3)
+		plt.plot(W3, color='yellow', alpha=0.3)
+		plt.xlabel('i')
+		plt.ylabel('w[i]')
+		plt.legend(['std', 'ours1, ours2'])
+		plt.ylim((0, 0.2))
+		plt.show()
+
+	# save data:
+	np.savetxt('mat-data/variance.csv', V, delimiter=',')
+	np.savetxt('mat-data/bias.csv', b, delimiter=',')
+	np.savetxt('mat-data/weight.csv', W3, delimiter=',')
 	pass
 
 
 # simple_test(opt_GCG, eps=1e-20)
 # massive_test(opt_GCG, penalty=1e2, eps=1e-10, eps_zero=1e-10)
 # show_form_benefit(iter=300)
-compare_two(m=512)
+compare_two(m=128)

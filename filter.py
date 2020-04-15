@@ -119,8 +119,18 @@ def imshow(img: np.ndarray, title=None):
 	Image.fromarray((255 * img).astype('uint8')).show(title)
 
 
+def imdiff(img1, img2):
+	diff_img = img1 - img2
+	diff = diff_img.mean()
+	return diff_img, diff
+
+
 def show_diff(img1, img2):
-	imshow(img1 - img2)
+	diff_img = img1 - img2
+	diff = diff_img.mean()
+	imshow(diff_img)
+	print(f'mean difference = {diff}')
+	return diff
 
 
 def visualize_weight(im_mean, im_var, im_background, filter_size: tuple, at: tuple, gamma=0.1, alpha=1.0,
@@ -144,23 +154,28 @@ def visualize_weight(im_mean, im_var, im_background, filter_size: tuple, at: tup
 
 
 # small test:
-# im_mean = imread('data/images-png-part1/16spp/mean_cross_filtered_iter2.png')[200:300, 300:450, :]
-# im_mean = imread('data/16mean.png')[200:300, 300:450, :]
-# im_var = imread('data/16variance.png')[200:300, 300:450, :] / (16 ** 2)
-# im_var = imread('data/images-png-part1/16spp/variance_cross_filtered_iter2.png')[200:300, 300:450, :] / (16 ** 2)
-# im_original = imread('data/16mean.png')[200:300, 300:450, :]
-# im_result = denoise(im_mean, im_var, im_original, (63, 63), max_iter=0)
-# imwrite(im_result, 'out/small 63x63/filtered_iter_0_bias_var_guided_by_self.png')
+it = 100
+im_mean = imread('data/16mean.png')[200:300, 300:450, :3]
+im_var = imread('data/16variance.png')[200:300, 300:450, :3] / 16
+im_original = imread('data/16mean.png')[200:300, 300:450, :3]
+imwrite(im_mean, 'out/bias/org.png')
+imwrite(im_var, 'out/bias/var.png')
+im_result = denoise(im_mean, im_var, im_original, (63, 63), max_iter=it)
+imwrite(im_result, f'out/bias/it={it}.result.png')
+im_diff, diff = imdiff(im_result, im_original)
+imwrite(im_diff, f'out/bias/it={it}.diff.png')
+with open(f'out/bias/it={it}.diff.txt', 'w') as f:
+	f.write(str(diff))
 
 # massive test:
-im_mean = imread('data/images-png-part1/16spp/mean_cross_filtered_iter2.png')
-im_var = imread('data/images-png-part1/16spp/variance_cross_filtered_iter2.png') / (16 ** 2)
-im_original = check_shape(imread('data/16mean.png'))
+# im_mean = imread('data/images-png-part1/16spp/mean_cross_filtered_iter2.png')
+# im_var = imread('data/images-png-part1/16spp/variance_cross_filtered_iter2.png') / 16
+# im_original = check_shape(imread('data/16mean.png'))
 # visualize filter weight:
-points = [(230, 520), (358, 367), (446, 552), (470, 181), (386, 181), (310, 636), (552, 826)]
-for point in points:
-	visualize_weight(im_mean, im_var, im_original, (63, 63), at=point, alpha=1, gamma=0.1, in_place=True, max_iter=500)
-imwrite(im_original, 'out/full 63x63/weight_iter_500.png')
+# points = [(230, 520), (358, 367), (446, 552), (470, 181), (386, 181), (310, 636), (552, 826)]
+# for point in points:
+# 	visualize_weight(im_mean, im_var, im_original, (63, 63), at=point, alpha=1, gamma=0.1, in_place=True, max_iter=4000)
+# imwrite(im_original, 'out/full 63x63/weight_iter_4000.png')
 # draw weights on im_original
 
 # imwrite(im_original, 'out/full 63x63/16original.png')
@@ -170,6 +185,11 @@ imwrite(im_original, 'out/full 63x63/weight_iter_500.png')
 
 # diff
 # imwrite(imread('out/full 63x63/16reference.png')[:,:,0:3] - imread('out/full 63x63/iter_0_init_bias_var.png'), 'out/full 63x63/diff.png')
+# im_org = imread('out/small 63x63/16original.png')[:, :, :3]
+# im_our = imread('out/small 63x63/filtered_iter_0.png')[:, :, :3]
+# show_diff(im_org, im_our)
+# im_our = imread('out/small 63x63/filtered_iter_10.png')[:, :, :3]
+# show_diff(im_org, im_our)
 
 # im = Image.open('data/16mean.png')
 # since = time.time()

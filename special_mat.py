@@ -40,7 +40,7 @@ class MatrixA(object):
 	def split(self, J):
 		'''split the matrix into [[A_II, A_JI^T], [A_JI, A_JJ]]
 
-		:param J: index map
+		:param J: mask vector
 		:return: MatrixA, A_JJ
 		'''
 		return MatrixA(self.b[J], self.v[J], self.p)
